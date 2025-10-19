@@ -13,3 +13,30 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Trabajo para estadistica 
 1.Subir datos 
+
+
+
+
+
+```{r}
+setwd("/Users/nicolyulissataipearoni/Documents/GitHub/proyecto_estadistica_angieynicole")
+library(readr)
+
+Empleo_2010 <- read_csv(
+  "data/Enaho01a-2010-500.csv",
+  locale = locale(encoding = "Latin1"),   # o "Windows-1252" si hiciera falta
+  guess_max = 100000,                      # mejora el tipeo con muchos registros
+  na = c("", "NA", "NaN")
+)
+```
+
+
+```{r}
+
+```
+
+
+
+
+
+
