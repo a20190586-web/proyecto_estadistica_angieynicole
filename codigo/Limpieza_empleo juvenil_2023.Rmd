@@ -1,0 +1,286 @@
+---
+title: "Impacto en el IDH"
+output: html_document
+date: "2025-10-21"
+---
+
+# Desigualdad digital y empleabilidad en jóvenes peruanos (2022 -2023)
+
+## 1. Instalar e importar librerías
+
+```{r}
+# Carga de librerías
+library(dplyr)     # Manipulación de datos
+library(stringr)
+library(janitor)   # Limpieza rápida de nombres
+library(survey)    # Para aplicar factores de expansión
+library(ggplot2)
+library(readr)
+```
+
+COnfigurar directorio si es necesario
+
+```{r}
+# Directorio de trabajo
+
+getwd()
+
+#setwd("C:/Users/....")
+```
+
+## 2. Importar base de datos: módulos enaho año 2023
+
+1.  Empleo
+2.  Hogar \> internet
+3.  Individuo \> sexo + edad
+4.  Educación \>
+
+```{r}
+empleo <- read_delim("Enaho01a-2023-500.csv", delim = ",", locale = locale(encoding = "LATIN1"), show_col_types = FALSE) %>%
+  clean_names()
+
+```
+
+```{r}
+# 
+hogar <- read_delim("Enaho01-2023-100.csv", delim = ",", locale = locale(encoding = "LATIN1"), show_col_types = FALSE) %>%
+  clean_names()
+ 
+```
+
+```{r}
+individuos <- read_delim("Enaho01-2023-200.csv", delim = ",", locale = locale(encoding = "LATIN1"), show_col_types = FALSE) %>%
+  clean_names()
+
+```
+
+```{r}
+educacion <- read_delim("Enaho01A-2023-300.csv", delim = ",", locale = locale(encoding = "LATIN1"), show_col_types = FALSE) %>%
+  clean_names()
+```
+
+## 3. Filtrado de las principales variables
+
+### 1. Empleo filtrado: empleo_sel_23
+
+```{r}
+# Selección de variables clave del módulo 500. Empleo
+
+empleo_sel_23 <- empleo %>%
+  select(
+    ano, conglome, vivienda, hogar, codperso, ubigeo, dominio, estrato,
+    p501,     # tuvo trabajo la semana pasada
+    p507,     # categoría ocupacional
+    p511a,    # tipo de contrato
+    p514      # tiene otro trabajo
+  )
+```
+
+```{r}
+empleo_sel_23
+```
+
+### 2. Hogar filtrado: internet_sel_23
+
+-   p114: ¿Su hogar tiene conexión a internet?
+
+```{r}
+internet_sel_23 <- hogar %>%
+  select(
+    ano, conglome, vivienda, hogar, ubigeo, dominio, estrato,
+    p1144     # tine o no internet 
+  )
+```
+
+```{r}
+internet_sel_23
+```
+
+### 3. Individuos filtrado: individuos_sel_2023
+
+-   p207 + p208 + p209
+
+```{r}
+individuos_sel_23 <- individuos %>%
+  select(
+    ano, conglome, vivienda, hogar, codperso, ubigeo, dominio, estrato, 
+    p207,     # sexo
+    p208a,    # edad
+    p209      # estado civil
+  )
+```
+
+```{r}
+individuos_sel_23
+```
+
+### 4. Educación filtrado: educacion_sel_23
+
+-   p300A + p301 + p313A
+
+```{r}
+educacion_sel_23 <- educacion %>%
+  select(
+    ano, conglome, vivienda, hogar, codperso, ubigeo, dominio, estrato,
+    p300a,     # lengua materna
+    p301a,    # último año de estudio aprobado
+    p313      # porqué no estudia
+  )
+```
+
+## 4. Unir bases con MERGE: data_23
+
+primero a nivel individual
+
+```{r}
+# 2. Merge individual + educación + empleo
+individuo_23 <- individuos_sel_23 %>%
+  left_join(educacion_sel_23, by = c("ubigeo", "conglome", "vivienda", "hogar", "codperso")) %>%
+  left_join(empleo_sel_23,    by = c("ubigeo", "conglome", "vivienda", "hogar", "codperso"))
+```
+
+Verificar merge
+
+```{r}
+nrow(individuos_sel_23) # Total original de personas
+
+nrow(individuo_23)           # Debe ser igual al número de individuos
+
+```
+
+Ahora se une el hogar SIN codperso (hereda características del hogar)
+
+```{r}
+library(dplyr)
+
+data_23 <- individuo_23 %>%
+  left_join(internet_sel_23 %>%
+              select(ano, conglome, vivienda, hogar, p1144), 
+            by = c("ano", "conglome", "vivienda", "hogar"))
+
+```
+
+Agregar ID unico por individuo
+
+```{r}
+data_23 <- data_23 %>%
+  mutate(id_individuo = paste(ubigeo, conglome, vivienda, hogar, codperso, sep = "_"))
+
+nrow(data_23) == n_distinct(data_23$id_individuo) 
+#Si  da TRUE, significa que cada persona está correctamente identificada (sin duplicados)
+
+```
+
+verificar numero de hogares
+
+```{r}
+n_distinct(data_23[, c("ubigeo", "conglome", "vivienda", "hogar")]) 
+n_distinct(data_23$id_individuo)
+
+```
+
+
+
+## 5. Limpieza de la base final (2020-2023)
+
+Ver la estructura de la data:
+
+```{r}
+# Ver estructura general
+glimpse(data_23)
+
+```
+
+```{r}
+# Muestra las primeras observaciones
+head(data_23, 10)
+```
+
+Limpieza inicial y consolidación de variables
+
+```{r}
+ # 1. Unificamos nombres y eliminamos duplicados
+data_23 <- data_23 %>%
+  mutate(
+    dominio = coalesce(dominio, dominio.x, dominio.y),
+    estrato = coalesce(estrato, estrato.x, estrato.y)
+  ) %>%
+  select(
+    ano, ubigeo, conglome, vivienda, hogar, codperso,
+    dominio, estrato,
+    p207, p208a, p209, p300a, p301a, p313,
+    p501, p507, p511a, p514, p1144,
+    id_individuo
+  )
+
+```
+
+Tratamiento de valores vacíos y tipos de datos
+
+```{r}
+data_23 <- data_23 %>%
+  # Reemplazamos espacios vacíos (" ") por NA
+  mutate(across(everything(), ~na_if(trimws(.), ""))) %>%
+  
+  # Convertimos tipos de datos
+  mutate(
+    across(c(p207, p209, p300a, p301a, p313, p501, p507, p511a, p514, p1144), as.character),
+    edad = as.numeric(p208a)
+  )
+
+```
+
+Renombrar de variables
+
+```{r}
+data_23 <- data_23 %>%
+  rename(
+    sexo   = p207,      # Sexo
+    estciv = p209,      # Estado civil
+    lengua = p300a,     # Lengua materna
+    ultani = p301a,     # Último año aprobado
+    razest = p313,      # Razón por la que no estudia
+    trabsp = p501,      # Trabajó la semana pasada
+    catocu = p507,      # Categoría ocupacional
+    tipcon = p511a,     # Tipo de contrato
+    otrtra = p514,      # Tiene otro trabajo
+    interh = p1144      # Internet en el hogar
+  )
+
+```
+
+Cambiamos etiquetas:
+
+```{r}
+data_23 <- data_23 %>%
+  mutate(
+    sexo = factor(sexo, levels = c("1", "2"), labels = c("Hombre", "Mujer")),
+    interh = factor(interh, levels = c("1", "2"), labels = c("Sí", "No")),
+    trabsp = factor(trabsp, levels = c("1", "2"), labels = c("Sí", "No")),
+    otrtra = factor(otrtra, levels = c("1", "2"), labels = c("Sí", "No"))
+  )
+```
+
+Filtrar por los jovenes de 18 a 29 años
+
+```{r}
+data_jovenes_23 <- data_23 %>%
+  filter(edad >= 18, edad <= 29)
+```
+
+## 6. Guardar y exportar
+
+```{r}
+write.csv(data_jovenes_23, "data_jovenes_23.csv", row.names = FALSE, fileEncoding = "UTF-8")
+```
+
+Verficar lectura de la base de datos
+
+```{r}
+# Leer la base limpia
+data_jov23 <- read.csv("data_jovenes_23.csv", encoding = "UTF-8") %>%
+  clean_names()
+
+# Ver estructura
+glimpse(data_jov23)
+```

@@ -1,0 +1,109 @@
+---
+title: "Limpieza_de_datos"
+author: "Nicol Taipe"
+date: "2025-10-23"
+output: html_document
+---
+
+# Unir base de datos limpiados, ENAHO 2022 y 2023
+
+
+## 1. Importar base de datos
+
+```{r}
+# Carga de librerías
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(janitor)
+```
+
+
+base 2022
+```{r}
+# Leer la base 2022
+data_jov22 <- read.csv("data_jovenes_22.csv", encoding = "UTF-8") %>%
+  clean_names()
+```
+
+base 2023
+```{r}
+# Leer la base 2023
+data_jov23 <- read.csv("data_jovenes_23.csv", encoding = "UTF-8") %>%
+  clean_names()
+```
+
+## 2. Preparar para merge
+
+
+```{r}
+# Ver estructura 2022
+glimpse(data_jov22)
+```
+
+```{r}
+# En 2022: recodificar variables numéricas a texto
+data_jov22 <- data_jov22 %>%
+  mutate(
+    sexo = case_when(
+      sexo == 1 ~ "Hombre",
+      sexo == 2 ~ "Mujer",
+      TRUE ~ NA_character_
+    ),
+    trabsp = case_when(
+      trabsp == 1 ~ "Sí",
+      trabsp == 2 ~ "No",
+      TRUE ~ NA_character_
+    ),
+    otrtra = case_when(
+      otrtra == 1 ~ "Sí",
+      otrtra == 2 ~ "No",
+      TRUE ~ NA_character_
+    ),
+    interh = case_when(
+      interh == 1 ~ "Sí",
+      interh == 0 ~ "No",
+      TRUE ~ NA_character_
+    )
+  )
+```
+
+
+```{r}
+#ver estrcutura 2023
+glimpse(data_jov23)
+```
+
+```{r}
+# Asegurar mismas columnas
+setdiff(names(data_jov22), names(data_jov23))  # Ver qué falta
+setdiff(names(data_jov23), names(data_jov22))
+```
+
+## 3. Merge 
+
+```{r}
+data_final <- bind_rows(data_jov22, data_jov23)
+
+```
+
+
+```{r}
+# Verificar unión
+data_final %>%
+  group_by(ano) %>%
+  summarise(obs = n())
+```
+
+## 4. Exportar data final 
+
+```{r}
+write.csv(data_final, "data_final.csv", row.names = FALSE, fileEncoding = "UTF-8")
+
+```
+
+
+
+
+
+
