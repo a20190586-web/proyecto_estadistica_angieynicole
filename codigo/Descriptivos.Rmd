@@ -1,0 +1,81 @@
+---
+title: "Estadistica descriptiva"
+author: "Nicol Taipe"
+date: "2025-10-24"
+output: html_document
+---
+
+#Estaditicos descriptivos
+##1.Importar data
+```{r}
+library(readr)
+data_final <- read_csv("Documents/GitHub/proyecto_estadistica_angieynicole/data limpia/data_final.csv", show_col_types = FALSE)
+```
+##2. 
+
+```{r}
+str(data_final)
+```
+
+```{r}
+summary(data_final)
+```
+
+```{r}
+summary(data_final$edad)
+```
+
+
+```{r}
+hist(data_final$edad)
+```
+
+```{r}
+hist(data_final$edad,
+     main = "Distribución de la edad",
+     xlab = "Edad (años)",
+     ylab = "Frecuencia",
+     col = "lightblue",
+     border = "white")
+
+```
+
+
+
+```{r}
+library(ggplot2)
+
+p <- ggplot(data_final, aes(x = edad)) +
+  geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
+  labs(
+    title = "Distribución de la edad",
+    x = "Edad (años)",
+    y = "Frecuencia"
+  ) +
+  theme_minimal()
+
+ggsave("histograma_edad.png", plot = p, width = 8, height = 6, dpi = 300)
+```
+
+
+
+
+```{r}
+png("hist_edad.png", width = 800, height = 600)
+
+hist(data_final$edad,
+     main = "Distribución de la edad",
+     xlab = "Edad (años)",
+     ylab = "Frecuencia",
+     col = "lightblue",
+     border = "white")
+```
+
+
+
+
+
+
+
+
+
