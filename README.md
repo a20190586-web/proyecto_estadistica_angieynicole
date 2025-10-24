@@ -2,7 +2,7 @@
 
 ##  Autores: 
 - Nicol Yulissa Taipe Aroni (20222682)
-- Angie Vargas (codigo)
+- Angie Vargas (20190586)
   
 ##  Descripción del proyecto
 Este proyecto analiza cómo el **acceso a Internet influye en la probabilidad de tener un empleo formal** entre jóvenes peruanos (18–29 años) durante el periodo **pospandemia (2022–2023)**.  
