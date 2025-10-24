@@ -1,5 +1,9 @@
 # Desigualdad digital y empleabilidad en jóvenes peruanos (18–29 años) 2022–2023
 
+##  Autores: 
+- Nicol Yulissa Taipe Aroni (20222682)
+- Angie Vargas (codigo)
+  
 ##  Descripción del proyecto
 Este proyecto analiza cómo el **acceso a Internet influye en la probabilidad de tener un empleo formal** entre jóvenes peruanos (18–29 años) durante el periodo **pospandemia (2022–2023)**.  
 La investigación utiliza datos de la **Encuesta Nacional de Hogares (ENAHO)** del **INEI**, disponibles en: [https://proyectos.inei.gob.pe/microdatos/](https://proyectos.inei.gob.pe/microdatos/).
