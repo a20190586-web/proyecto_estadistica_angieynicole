@@ -47,14 +47,3 @@ Evaluar si el acceso a Internet en el hogar aumenta la probabilidad de acceder a
 - data_limpia: `data_jovenes_22.csv`, `data_jovenes_23.csv` y `data_limpia.csv`  
 - `códigos`: limpieza, merge y análisis estadístico.
 
-## Descriptivos
-Histograma de la distribucion de edad
-
-<img width="800" height="600" alt="hist_edad" src="https://github.com/user-attachments/assets/7334887f-183e-41eb-81e6-204ef9e7f4f2" />
-
-Interpretacion:
-
-
-
-
-
