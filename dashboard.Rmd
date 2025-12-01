@@ -1,0 +1,149 @@
+---
+title: "dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(readr)
+library(dplyr)
+library(knitr)
+library(ggplot2)
+
+# Ruta donde guardaste tus imágenes
+img_path <- "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes"
+```
+
+------------------------------------------------------------------------
+
+# Proyecto Final
+
+Nicol Yulissa Taipe Aroni (20222682)
+Angie Vargas (20190586)
+
+**Tema**
+
+Desigualdad digital y empleabilidad en jóvenes peruanos (18–29 años), 2020–2023 (pandemia y pospandemia)
+
+**Pregunta** : ¿De qué manera el acceso a Internet incide en la probabilidad de acceder a un empleo formal entre los jóvenes peruanos (18–29 años) durante 2020–2023?
+
+**Hipótesis** : Los jóvenes con acceso a Internet en el hogar tienen mayor probabilidad de acceder a un empleo formal, controlando por educación, género y zona geográfica.
+
+
+------------------------------------------------------------------------
+
+# Descriptivos
+
+## Variable dependiente
+
+Para la construcción de la variable dependiente “empleo formal”, se consideraron los individuos que cumplen simultáneamente dos criterios: ser asalariados y contar con contrato escrito.Luego todo se hace sobre los que estan empleados.
+
+
+El 25.4 % tienen empleo formal, 51.8 % informal y 22.8 % carecen de información suficiente. Esto evidencia que más de la mitad de los trabajadores jóvenes activos se encuentran en condiciones laborales informales, un hallazgo consistente con los desafíos estructurales del mercado laboral peruano.
+
+
+### Trabajo formal
+
+```{r}
+knitr::include_graphics(file.path(img_path, "grafico_formalidad_ocupados.png"))
+
+```
+
+
+## Variable independiente principal
+
+Entre los trabajadores (empleo), se observa que aproximadamente 79 % tiene acceso a internet en el hogar, mientras que 21 % no lo tiene, lo que indica una cobertura relativamente alta del servicio en esta submuestra.
+
+### Acceso a internet
+
+```{r}
+knitr::include_graphics(file.path(img_path, "grafico_internet_ocupados.png"))
+
+```
+
+
+------------------------------------------------------------------------
+
+# Análisis bivariado
+
+Visto sobre el total de ocupados, casi la mitad (49.7 %) son trabajadores informales con internet, seguido por 30.3 % de trabajadores formales con internet, 16.8 % informales sin internet y 3.1 % formales sin internet.
+
+Estos resultados sugieren que el acceso a internet en el hogar se asocia positivamente con mayores probabilidades de estar en empleo formal.
+
+## empleo formal y acceso a internet
+
+```{r}
+knitr::include_graphics(file.path(img_path, "bivariado_internet_formalidad.png"))
+
+```
+
+Se realizó un test de chi-cuadrado de independencia para evaluar la relación entre empleo formal y acceso a internet en el hogar.
+
+Los resultados muestran un estadístico χ² = 603.1 con 1 grado de libertad y un valor p \< 2.2 × 10⁻¹⁶, lo que indica una asociación estadísticamente significativa entre ambas variables.
+
+Los residuos estandarizados reflejan que hay un exceso de trabajadores informales sin internet (residuo = 24.58) y un déficit de trabajadores informales con internet (residuo = -24.58), mientras que ocurre lo contrario para los trabajadores formales, sugiriendo que el acceso a internet en el hogar se asocia positivamente con la probabilidad de tener empleo formal.
+
+------------------------------------------------------------------------
+
+# Modelos
+
+## Regresión logística
+
+Se estimó un modelo de regresión logística para analizar los determinantes del empleo formal (trabajo_formal_v2) considerando como variables explicativas el acceso a internet, sexo, edad, estado civil, dominio geográfico, lengua materna y último nivel educativo.
+
+En términos prácticos, el modelo indica que tener internet, ser mayor y vivir en Lima Metropolitana son los factores más importantes asociados con empleo formal, mientras que las diferencias por sexo y región también son relevantes. Otras variables, como lengua materna y estado civil, presentan un efecto menor o no significativo en esta muestra.
+
+
+
+### Odds ratios
+
+```{r}
+knitr::include_graphics(file.path(img_path, "odds_ratios_modelo.png"))
+
+```
+
+
+
+------------------------------------------------------------------------
+
+# Análisis Factorial
+
+## MCA
+
+El MCA realizado sobre las variables categóricas seleccionadas (sexo_d, estciv_ord, dominio, lengua_cat, ultani_cat) generó cinco ejes principales (nf = 5) que resumen la estructura multidimensional de las categorías presentes en los datos. Los primeros eigenvalores (0.327, 0.298, 0.244, 0.240 y 0.234) indican que estos componentes capturan una parte importante, aunque moderada, de la variabilidad total, lo cual es típico en análisis con muchas categorías y niveles heterogéneos. 
+
+La Dimensión 1 del MCA refleja principalmente un eje de heterogeneidad lingüística y educativa. 
+
+
+
+### Categorias
+
+```{r}
+knitr::include_graphics(file.path(img_path, "mca_categorias.png"))
+
+```
+
+
+
+------------------------------------------------------------------------
+
+# Análisis de Clusters
+
+La clasificación basada en el MCA generó tres grupos socioculturales claramente diferenciados en el espacio factorial. El Cluster 1, 89%,  el conjunto más extendido y disperso en la parte central e inferior (puntos rojos). Un perfil mayoritario y estándar, caracterizado por hablantes de castellano, educación secundaria o superior común y predominancia urbana.  El Cluster 2,  10%, mucho más compacta en la parte superior del gráfico (puntos verdes). Un perfil sociocultural consistente y diferenciado, típico de grupos con mayor presencia de lenguas andinas, residencia rural o en ciudades pequeñas y niveles educativos más bajos o discontinuos. El Cluster 3, solo 1%, aparece disperso en zonas periféricas del gráfico (puntos azules), sin formar un grupo compacto. Esta ubicación marginal (lenguas no comunes o trayectorias educativas poco convencionales). 
+
+
+### Clusters finales
+
+```{r}
+knitr::include_graphics(file.path(img_path, "mca_clusters.png"))
+
+```
+
+
+------------------------------------------------------------------------
