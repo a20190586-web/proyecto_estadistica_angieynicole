@@ -9,10 +9,11 @@ output: html_document
 ##1.Importar data
 ```{r}
 library(readr)
-data_final <- read_csv("C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/data limpia/data_final.csv", show_col_types = FALSE)
+data_final <- read_csv("/Users/nicolyulissataipearoni/Documents/GitHub/proyecto_estadistica_angieynicole/data limpia/data_final.csv", show_col_types = FALSE)
 
 ```
  
+
 
 ```{r}
 str(data_final)
@@ -250,7 +251,7 @@ p
 ggsave(
   filename = "grafico_formalidad_ocupados.png",
   plot = p,
-  path = "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes",
+  path = "/Users/nicolyulissataipearoni/Documents/GitHub/proyecto_estadistica_angieynicole/Imagenes",
   width = 10,
   height = 7,
   dpi = 300
@@ -306,7 +307,7 @@ p
 ggsave(
   filename = "grafico_internet_ocupados.png",
   plot = p,
-  path = "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes",
+  path = "/Users/nicolyulissataipearoni/Documents/GitHub/proyecto_estadistica_angieynicole/Imagenes",
   width = 10,
   height = 7,
   dpi = 300
@@ -360,7 +361,7 @@ p_biv
 ggsave(
   filename = "bivariado_internet_formalidad.png",
   plot = p_biv,
-  path = "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes",
+  path = "/Users/nicolyulissataipearoni/Documents/GitHub/proyecto_estadistica_angieynicole/Imagenes",
   width = 10,
   height = 7,
   dpi = 300
@@ -386,50 +387,6 @@ chi_test
 chi_test$stdres
 
 ```
-
-Extra 
-Analisis bivariado con las otras variables 
-```{r}
-library(dplyr)
-library(ggplot2)
-
-# Filtrar solo casos completos (sin NA en las variables de interés)
-biv_data <- empleo_mod %>%
-  filter(!is.na(trabajo_formal_v2),
-         !is.na(interh),
-         !is.na(dominio),
-         !is.na(sexo_d),
-         !is.na(estciv_ord),
-         !is.na(lengua_cat),
-         !is.na(ultani_cat))
-
-# 1) Acceso a internet (interh)
-tabla_internet <- table(biv_data$trabajo_formal_v2, biv_data$interh)
-prop.table(tabla_internet, margin = 2) * 100  # Porcentaje dentro de cada nivel de interh
-
-# 2) Dominio geográfico
-tabla_dominio <- table(biv_data$trabajo_formal_v2, biv_data$dominio)
-prop.table(tabla_dominio, margin = 2) * 100
-
-# 3) Sexo
-tabla_sexo <- table(biv_data$trabajo_formal_v2, biv_data$sexo_d)
-prop.table(tabla_sexo, margin = 2) * 100
-
-# 4) Estado civil
-tabla_estciv <- table(biv_data$trabajo_formal_v2, biv_data$estciv_ord)
-prop.table(tabla_estciv, margin = 2) * 100
-
-# 5) Lengua materna
-tabla_lengua <- table(biv_data$trabajo_formal_v2, biv_data$lengua_cat)
-prop.table(tabla_lengua, margin = 2) * 100
-
-# 6) Último año de estudio
-tabla_ultani <- table(biv_data$trabajo_formal_v2, biv_data$ultani_cat)
-prop.table(tabla_ultani, margin = 2) * 100
-
-```
-
-
 
 
 ANALISIS MULTIVARIADO 
@@ -609,7 +566,7 @@ p_or
 ggsave(
   filename = "odds_ratios_modelo.png",
   plot = p_or,
-  path = "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes",
+  path = "/Users/nicolyulissataipearoni/Documents/GitHub/proyecto_estadistica_angieynicole/Imagenes",
   width = 10,
   height = 7,
   dpi = 300
@@ -722,7 +679,7 @@ p_mca <- as.ggplot(function() s.label(mca_res$co, clabel = 1, sub = "MCA - Categ
 ggsave(
   filename = "mca_categorias.png",
   plot = p_mca,
-  path = "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes",
+  path = "/Users/nicolyulissataipearoni/Documents/GitHub/proyecto_estadistica_angieynicole/Imagenes",
   width = 10,
   height = 7,
   dpi = 300
@@ -756,14 +713,6 @@ plot(hc, main = "Dendrograma - MCA + Ward")
 
 ```
 
-
-```{r}
-# 5. Elegir número de clusters (ej. 3)
-clusters <- cutree(hc, k = 3)
-
-# 6. Añadir cluster al dataframe original
-empleo_mv$cluster <- factor(clusters)
-```
 
 
 ```{r}
@@ -833,7 +782,7 @@ p_clusters
 ggsave(
   filename = "mca_clusters.png",
   plot = p_clusters,
-  path = "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes",
+  path = "/Users/nicolyulissataipearoni/Documents/GitHub/proyecto_estadistica_angieynicole/Imagenes",
   width = 10,
   height = 7,
   dpi = 300

@@ -17,7 +17,7 @@ library(knitr)
 library(ggplot2)
 
 # Ruta donde guardaste tus imágenes
-img_path <- "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes"
+img_path <- "/Users/nicolyulissataipearoni/Documents/GitHub/proyecto_estadistica_angieynicole/Imagenes"
 ```
 
 ------------------------------------------------------------------------
@@ -38,9 +38,9 @@ Desigualdad digital y empleabilidad en jóvenes peruanos (18–29 años), 2020�
 
 ------------------------------------------------------------------------
 
-# Descriptivos
+# Variable Dependiente
 
-## Variable dependiente
+## Empleo formal
 
 Para la construcción de la variable dependiente “empleo formal”, se consideraron los individuos que cumplen simultáneamente dos criterios: ser asalariados y contar con contrato escrito.Luego todo se hace sobre los que estan empleados.
 
@@ -48,7 +48,6 @@ Para la construcción de la variable dependiente “empleo formal”, se conside
 El 25.4 % tienen empleo formal, 51.8 % informal y 22.8 % carecen de información suficiente. Esto evidencia que más de la mitad de los trabajadores jóvenes activos se encuentran en condiciones laborales informales, un hallazgo consistente con los desafíos estructurales del mercado laboral peruano.
 
 
-### Trabajo formal
 
 ```{r}
 knitr::include_graphics(file.path(img_path, "grafico_formalidad_ocupados.png"))
@@ -56,11 +55,10 @@ knitr::include_graphics(file.path(img_path, "grafico_formalidad_ocupados.png"))
 ```
 
 
-## Variable independiente principal
+## Acceso a internet
 
 Entre los trabajadores (empleo), se observa que aproximadamente 79 % tiene acceso a internet en el hogar, mientras que 21 % no lo tiene, lo que indica una cobertura relativamente alta del servicio en esta submuestra.
 
-### Acceso a internet
 
 ```{r}
 knitr::include_graphics(file.path(img_path, "grafico_internet_ocupados.png"))
