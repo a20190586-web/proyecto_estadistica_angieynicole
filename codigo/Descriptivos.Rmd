@@ -9,67 +9,890 @@ output: html_document
 ##1.Importar data
 ```{r}
 library(readr)
-data_final <- read_csv("Documents/GitHub/proyecto_estadistica_angieynicole/data limpia/data_final.csv", show_col_types = FALSE)
+data_final <- read_csv("C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/data limpia/data_final.csv", show_col_types = FALSE)
+
 ```
-##2. 
+ 
 
 ```{r}
 str(data_final)
 ```
 
+Limpieza de variables 
 ```{r}
-summary(data_final)
+# Número total de NA por variable
+colSums(is.na(data_final))
+
+```
+etiquetas
+
+```{r}
+library(dplyr)
+
+data_final <- data_final |>
+  mutate(
+    sexo   = factor(sexo),     # viene como "Hombre"/"Mujer" en texto
+    estciv = factor(estciv),   # valores numéricos, luego revisamos niveles
+    lengua = factor(lengua),
+    razest = factor(razest),
+    trabsp = factor(trabsp),   # viene como "Sí"/"No"
+    catocu = factor(catocu),   # valores numéricos (pero primero hay que ver cuáles)
+    tipcon = factor(tipcon),   # valores numéricos (primero revisar)
+    otrtra = factor(otrtra),   # viene como "Sí"/"No"
+    interh = factor(interh)    # viene como "Sí"/"No"
+  )
+
+```
+
+CREACIÓN DE VARIABLE DEPENDIENTE: 
+Variable de empleo formal
+
+Criterio: asalariado + contrato escrito + trabajó.
+
+1. Empleo 
+
+
+```{r}
+table(data_final$trabsp)
+prop.table(table(data_final$trabsp)) * 100
+```
+
+
+2. Tipo de ocupación
+
+```{r}
+data_final <- data_final |>
+  mutate(
+    catocu = factor(catocu,
+                    levels = 1:7,
+                    labels = c("Empleador", 
+                               "Independiente", 
+                               "Empleado",
+                               "Obrero",
+                               "Familiar_no_remunerado",
+                               "Trabajador_hogar",
+                               "Otro"))
+  )
+
 ```
 
 ```{r}
-summary(data_final$edad)
+table(data_final$catocu)
+prop.table(table(data_final$catocu)) * 100
 ```
 
+
+3. Tipo de contrato
 
 ```{r}
-hist(data_final$edad)
+data_final <- data_final |>
+  mutate(
+    tipcon = factor(
+      tipcon,
+      levels = 1:8,
+      labels = c(
+        "Indefinido_permanente",
+        "Plazo_fijo",
+        "Periodo_prueba",
+        "Convenio_practicas",
+        "Locacion_SNP",
+        "CAS",
+        "Sin_contrato",
+        "Otro"
+      )
+    )
+  )
+
 ```
 
 ```{r}
-hist(data_final$edad,
-     main = "Distribución de la edad",
-     xlab = "Edad (años)",
-     ylab = "Frecuencia",
-     col = "lightblue",
-     border = "white")
-
+table(data_final$tipcon)
+prop.table(table(data_final$tipcon)) * 100
 ```
 
 
+Crear variable de empleo formal 
+
+```{r}
+data_final <- data_final |>
+  mutate(
+    trabajo_formal = case_when(
+      trabsp == "Sí" & tipcon %in% c("Contrato indefinido / permanente",
+                                     "Contrato a plazo fijo",
+                                     "Periodo de prueba",
+                                     "Prácticas / convenios",
+                                     "Locación de servicios",
+                                     "CAS") ~ 1,
+      trabsp == "Sí" & tipcon %in% c("Sin contrato", "Otro") ~ 0,
+      trabsp == "No" ~ 0,
+      TRUE ~ NA_real_
+    )
+  )
+
+```
+
+```{r}
+table(data_final$trabajo_formal)
+prop.table(table(data_final$trabajo_formal)) * 100
+```
+
+```{r}
+library(dplyr)
+
+# 1) Mostrar niveles reales de tipcon y tabla cruzada (revisión)
+cat("Niveles de tipcon:\n"); print(levels(data_final$tipcon))
+cat("\nTabla trabsp x tipcon (resumen):\n")
+print(with(data_final, table(trabsp, tipcon, useNA = "ifany")))
+
+# 2) Intento de extraer códigos numéricos si tipcon conserva números en texto
+# (esto no sobrescribe la variable original)
+tipcon_num_try <- suppressWarnings(as.numeric(as.character(data_final$tipcon)))
+prop_na_num <- mean(is.na(tipcon_num_try))
+cat("\nProporción NA al intentar convertir tipcon a num:", round(prop_na_num,3), "\n\n")
+
+# 3) Recodificación robusta: usamos patrones en etiquetas y también números si existen
+formal_pattern <- "(Indefinido|Indefinido_permanente|Plazo|Periodo_prueba|Prueba|Convenio|Practicas|Locacion|Locación|Honor|SNP|CAS)"
+sin_pattern   <- "(Sin|Sin_contrato|Sin contrato|Sin_contrato|Sin_contrat)"
+
+data_final <- data_final %>%
+  mutate(
+    # si tipcon es numérico real (1..8) lo usamos; si no, usamos coincidencias por texto
+    tipcon_num = ifelse(!is.na(tipcon_num_try), tipcon_num_try, NA_real_),
+
+    trabajo_formal_v2 = case_when(
+      # caso A: trabajó y tipcon numérico indica formal (1-6)
+      trabsp == "Sí" & tipcon_num %in% 1:6 ~ 1,
+
+      # caso B: trabajó y tipcon es texto que coincide con patrón formal
+      trabsp == "Sí" & grepl(formal_pattern, as.character(tipcon), ignore.case = TRUE) ~ 1,
+
+      # trabajó y tipcon indica sin contrato u 'Otro' (texto o número 7/8) => informal
+      trabsp == "Sí" & (tipcon_num %in% c(7,8) |
+                        grepl(sin_pattern, as.character(tipcon), ignore.case = TRUE) |
+                        grepl("Otro", as.character(tipcon), ignore.case = TRUE)) ~ 0,
+
+      # Si no trabajó, dejamos NA (no es ocupado)
+      trabsp == "No" ~ NA_real_,
+
+      # si trabajó pero tipcon es NA -> dejar NA (no tenemos info)
+      trabsp == "Sí" & is.na(tipcon) ~ NA_real_,
+
+      TRUE ~ NA_real_
+    )
+  )
+
+# 4) Convertir a factor con etiquetas legibles
+data_final <- data_final %>%
+  mutate(
+    trabajo_formal_v2 = factor(trabajo_formal_v2, levels = c(0,1),
+                               labels = c("Informal","Formal"))
+  )
+
+# 5) Revisar resultados
+cat("\nTabla trabajo_formal_v2 (conteos):\n")
+print(table(data_final$trabajo_formal_v2, useNA = "ifany"))
+
+cat("\nPorcentajes (sobre totales con NA mostrados):\n")
+print(prop.table(table(data_final$trabajo_formal_v2, useNA = "ifany"))*100)
+
+# 6) Tabla solo entre ocupados (trabsp == "Sí") para validar
+cat("\nTabla entre ocupados (trabsp == 'Sí'):\n")
+print(with(subset(data_final, trabsp == "Sí"), table(trabajo_formal_v2, useNA = "ifany")))
+print(prop.table(with(subset(data_final, trabsp == "Sí"), table(trabajo_formal_v2, useNA = "ifany")))*100)
+
+```
+
+Dejar NA como “Información insuficiente” 
+
+Submuestra:
+
+```{r}
+data_final$trabajo_formal_final <- data_final$trabajo_formal_v2
+```
+
+Grafico 
+
+Entre los ocupados 
 
 ```{r}
 library(ggplot2)
+library(dplyr)
 
-p <- ggplot(data_final, aes(x = edad)) +
-  geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
-  labs(
-    title = "Distribución de la edad",
-    x = "Edad (años)",
-    y = "Frecuencia"
+# Filtrar solo ocupados
+ocupados <- data_final %>%
+  filter(trabsp == "Sí")
+
+# Tabla con porcentajes
+df_plot <- ocupados %>%
+  count(trabajo_formal_final) %>%
+  mutate(pct = n / sum(n) * 100)
+
+# Gráfico
+
+p <- ggplot(df_plot, aes(x = trabajo_formal_final, y = pct, fill = trabajo_formal_final)) +
+  geom_col(width = 0.7, show.legend = FALSE) +
+  geom_text(aes(label = paste0(round(pct, 1), "%")),
+            vjust = -0.5, size = 5) +
+  scale_y_continuous(
+    labels = scales::percent_format(scale = 1),
+    limits = c(0, 60)  # Ajuste para mostrar hasta más de 50%
   ) +
-  theme_minimal()
+  labs(
+    title = "Condición de formalidad laboral entre jóvenes ocupados",
+    x = "Condición laboral",
+    y = "Porcentaje"
+  ) +
+  theme_minimal(base_size = 14)
 
-ggsave("histograma_edad.png", plot = p, width = 8, height = 6, dpi = 300)
+p
+
+# Exportar la imagen
+ggsave(
+  filename = "grafico_formalidad_ocupados.png",
+  plot = p,
+  path = "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes",
+  width = 10,
+  height = 7,
+  dpi = 300
+)
+
+
+```
+
+SUBMUESTRA
+
+```{r}
+# Crear submuestra de ocupados
+empleo <- subset(data_final, trabsp == "Sí")
+
+```
+
+
+VARIABLE INDEPENDIENTE
+Acceso a internet
+
+```{r}
+table(empleo$interh)
+prop.table(table(empleo$interh)) * 100
+```
+
+
+grafico de acceos a internet
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Calcular porcentajes solo entre ocupados
+df_plot <- empleo %>%
+  count(interh) %>%
+  mutate(porc = round(100 * n / sum(n), 1))
+
+# Gráfico actualizado
+p <- ggplot(df_plot, aes(x = interh, y = porc)) +
+  geom_col(fill = "#4D7EA8") +
+  geom_text(aes(label = paste0(porc, "%")),
+            vjust = -0.5, size = 5) +
+  labs(
+    title = "Acceso a Internet en el hogar (jóvenes con empleo)",
+    x = "Acceso",
+    y = "Porcentaje (%)"
+  ) +
+  ylim(0, max(df_plot$porc) + 10) +
+  theme_minimal(base_size = 14)
+p
+
+# Exportar imagen
+ggsave(
+  filename = "grafico_internet_ocupados.png",
+  plot = p,
+  path = "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes",
+  width = 10,
+  height = 7,
+  dpi = 300
+)
+```
+
+ANALISIS BIVARIADO 
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+
+# Filtrar solo casos sin NA en las dos variables
+empleo_biv <- empleo %>%
+  filter(!is.na(interh) & !is.na(trabajo_formal_v2))
+
+
+# Tabla de contingencia
+tabla_biv <- table(empleo_biv$trabajo_formal_v2, empleo_biv$interh)
+tabla_biv
+
+# Porcentajes sobre el total de ocupados
+prop.table(tabla_biv, margin = 2) * 100   # Porcentaje dentro de cada nivel de interh
+prop.table(tabla_biv) * 100               # Porcentaje sobre total
+
+
+```
+```{r}
+# Gráfico bivariado: barras apiladas
+df_biv <- empleo_biv %>%
+  group_by(interh, trabajo_formal_v2) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  mutate(porc = round(100 * n / sum(n), 1))
+
+# Crear gráfico
+p_biv <- ggplot(df_biv, aes(x = interh, y = porc, fill = trabajo_formal_v2)) +
+  geom_col() +
+  geom_text(aes(label = paste0(porc, "%")), 
+            position = position_stack(vjust = 0.5), size = 4) +
+  labs(
+    title = "Empleo formal vs. acceso a internet en el hogar",
+    x = "Acceso a internet en el hogar",
+    y = "Porcentaje (%)",
+    fill = "Tipo de empleo"
+  ) +
+  theme_minimal(base_size = 14)
+
+p_biv 
+# Exportar imagen
+ggsave(
+  filename = "bivariado_internet_formalidad.png",
+  plot = p_biv,
+  path = "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes",
+  width = 10,
+  height = 7,
+  dpi = 300
+)
+
+```
+Realizar chi cuadrado 
+
+```{r}
+# Tabla de contingencia
+tabla_biv <- table(empleo_biv$trabajo_formal_v2, empleo_biv$interh)
+
+# Test de chi-cuadrado
+chi_test <- chisq.test(tabla_biv)
+chi_test
+
+```
+
+
+```{r}
+# ver los residuos estandarizados
+
+chi_test$stdres
+
+```
+
+Extra 
+Analisis bivariado con las otras variables 
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Filtrar solo casos completos (sin NA en las variables de interés)
+biv_data <- empleo_mod %>%
+  filter(!is.na(trabajo_formal_v2),
+         !is.na(interh),
+         !is.na(dominio),
+         !is.na(sexo_d),
+         !is.na(estciv_ord),
+         !is.na(lengua_cat),
+         !is.na(ultani_cat))
+
+# 1) Acceso a internet (interh)
+tabla_internet <- table(biv_data$trabajo_formal_v2, biv_data$interh)
+prop.table(tabla_internet, margin = 2) * 100  # Porcentaje dentro de cada nivel de interh
+
+# 2) Dominio geográfico
+tabla_dominio <- table(biv_data$trabajo_formal_v2, biv_data$dominio)
+prop.table(tabla_dominio, margin = 2) * 100
+
+# 3) Sexo
+tabla_sexo <- table(biv_data$trabajo_formal_v2, biv_data$sexo_d)
+prop.table(tabla_sexo, margin = 2) * 100
+
+# 4) Estado civil
+tabla_estciv <- table(biv_data$trabajo_formal_v2, biv_data$estciv_ord)
+prop.table(tabla_estciv, margin = 2) * 100
+
+# 5) Lengua materna
+tabla_lengua <- table(biv_data$trabajo_formal_v2, biv_data$lengua_cat)
+prop.table(tabla_lengua, margin = 2) * 100
+
+# 6) Último año de estudio
+tabla_ultani <- table(biv_data$trabajo_formal_v2, biv_data$ultani_cat)
+prop.table(tabla_ultani, margin = 2) * 100
+
+```
+
+
+
+
+ANALISIS MULTIVARIADO 
+
+primero, preperar las otras variables 
+
+```{r}
+library(dplyr)
+
+# Copiar data para no modificar la original
+empleo_mod <- empleo
+
+# 1) Dominio geográfico: volver categórica con etiquetas
+empleo_mod <- empleo_mod %>%
+  mutate(
+    dominio = factor(dominio,
+                     levels = 1:8,
+                     labels = c("Costa Norte","Costa Centro","Costa Sur",
+                                "Sierra Norte","Sierra Centro","Sierra Sur",
+                                "Selva","Lima Metropolitana"))
+  )
+
+# 2) Sexo: dicotómica (1 mujer, 0 hombre)
+empleo_mod <- empleo_mod %>%
+  mutate(
+    sexo_d = ifelse(sexo == "Mujer", 1,
+                    ifelse(sexo == "Hombre", 0, NA))
+  )
+
+# 3) Estado civil: categórica ordinal, unir viudo y divorciado
+empleo_mod <- empleo_mod %>%
+  mutate(
+    estciv_ord = case_when(
+      estciv %in% c(6) ~ "Soltero",
+      estciv == 5 ~ "Separado",
+      estciv == 1 ~ "Conviviente",
+      estciv == 2 ~ "Casado",
+      estciv %in% c(3,4) ~ "Viudo/Divorciado",
+      TRUE ~ NA_character_
+    ),
+    estciv_ord = factor(estciv_ord,
+                        levels = c("Soltero","Separado","Conviviente","Casado","Viudo/Divorciado"),
+                        ordered = TRUE)
+  )
+
+# 4) Lengua materna: categórica ordinal, cambios especiales
+empleo_mod <- empleo_mod %>%
+  mutate(
+    lengua_cat = case_when(
+      lengua %in% c(1) ~ "Quechua",
+      lengua %in% c(2) ~ "Aymara",
+      lengua %in% c(3) ~ "Otra lengua nativa",
+      lengua %in% c(4) ~ "Castellano",
+      lengua %in% c(6,7) ~ "Extranjera",
+      lengua == 8 ~ "Discapacidad",
+      lengua %in% c(9,99) ~ NA_character_,
+      TRUE ~ "Otro"
+    ),
+    lengua_cat = factor(lengua_cat,
+                        levels = c("Quechua","Aymara","Otra lengua nativa",
+                                   "Castellano","Extranjera","Discapacidad","Otro"),
+                        ordered = TRUE)
+  )
+
+# 5) Último año de estudio: categórica ordinal con etiquetas y ajustes
+empleo_mod <- empleo_mod %>%
+  mutate(
+    ultani_cat = case_when(
+      ultani == 1 ~ "Sin nivel",
+      ultani %in% c(2,12) ~ "Educación Inicial",
+      ultani == 3 ~ "Primaria incompleta",
+      ultani == 4 ~ "Primaria completa",
+      ultani == 5 ~ "Secundaria incompleta",
+      ultani == 6 ~ "Secundaria completa",
+      ultani == 7 ~ "Superior no universitaria incompleta",
+      ultani == 8 ~ "Superior no universitaria completa",
+      ultani == 9 ~ "Superior universitaria incompleta",
+      ultani == 10 ~ "Superior universitaria completa",
+      ultani == 11 ~ "Postgrado universitario",
+      ultani %in% c(99) ~ NA_character_,
+      TRUE ~ "Otro"
+    ),
+    ultani_cat = factor(ultani_cat,
+                        levels = c("Sin nivel","Educación Inicial","Primaria incompleta",
+                                   "Primaria completa","Secundaria incompleta","Secundaria completa",
+                                   "Superior no universitaria incompleta","Superior no universitaria completa",
+                                   "Superior universitaria incompleta","Superior universitaria completa",
+                                   "Postgrado universitario","Otro"),
+                        ordered = TRUE)
+  )
+
+# Revisar cambios
+str(empleo_mod)
+
 ```
 
 
 
 
 ```{r}
-png("hist_edad.png", width = 800, height = 600)
+library(dplyr)
+library(broom)
 
-hist(data_final$edad,
-     main = "Distribución de la edad",
-     xlab = "Edad (años)",
-     ylab = "Frecuencia",
-     col = "lightblue",
-     border = "white")
+# Filtrar solo casos completos para las variables que vamos a usar
+empleo_mv <- empleo_mod %>%
+  select(trabajo_formal_v2, interh, sexo_d, edad, estciv_ord, dominio, lengua_cat, ultani_cat) %>%
+  filter(!is.na(trabajo_formal_v2) &
+         !is.na(interh) &
+         !is.na(sexo_d) &
+         !is.na(estciv_ord) &
+         !is.na(dominio) &
+         !is.na(lengua_cat) &
+         !is.na(ultani_cat))
+
+# Regresión logística
+modelo_logit <- glm(trabajo_formal_v2 ~ interh + sexo_d + edad + estciv_ord + dominio + lengua_cat + ultani_cat,
+                    data = empleo_mv,
+                    family = binomial(link = "logit"))
+
+# Resumen del modelo
+summary(modelo_logit)
+
 ```
+
+
+```{r}
+# Odds ratios y intervalos de confianza
+exp(cbind(OddsRatio = coef(modelo_logit), confint(modelo_logit)))
+
+# Tabla resumida con broom (opcional)
+library(broom)
+tidy(modelo_logit, exponentiate = TRUE, conf.int = TRUE)
+
+```
+
+
+Graficar 
+
+```{r}
+library(dplyr)
+library(broom)
+library(ggplot2)
+
+# Extraer tabla con coeficientes, OR y CI
+modelo_tidy <- tidy(modelo_logit, exponentiate = TRUE, conf.int = TRUE)
+
+# Filtrar solo significativos (p < 0.05)
+modelo_sig <- modelo_tidy %>%
+  filter(p.value < 0.05 & term != "(Intercept)")
+
+# Ver resultados
+modelo_sig
+
+
+```
+
+
+```{r}
+# Gráfico de odds ratios con intervalos de confianza
+
+
+# Crear gráfico de OR
+p_or <- ggplot(modelo_sig, aes(x = reorder(term, estimate), y = estimate)) +
+  geom_point(size = 3, color = "#4D7EA8") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                width = 0.2, color = "#4D7EA8") +
+  coord_flip() +
+  labs(
+    title = "Regresión logístico",
+    x = "Variable",
+    y = "Odds Ratio (OR)"
+  ) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  theme_minimal(base_size = 14)
+p_or
+# Exportar imagen
+ggsave(
+  filename = "odds_ratios_modelo.png",
+  plot = p_or,
+  path = "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes",
+  width = 10,
+  height = 7,
+  dpi = 300
+)
+
+```
+
+
+
+
+
+ANALISIS FACTORIAL (PCA o MCA)
+
+
+
+MCA para categóricas (muy útil para ENAHO)
+
+MCA (Análisis de Correspondencias Múltiples):
+
+Se aplica cuando las variables son categóricas o dicotómicas.
+
+Encuentra dimensiones que resumen las asociaciones entre categorías de varias variables.
+
+Ideal para tu caso, porque la mayoría de tus variables (sexo_d, estciv_ord, dominio, lengua_cat, ultani_cat) son categóricas.
+
+💡 Conclusión: En tu dataset, MCA es el más apropiado.
+
+
+
+```{r}
+# Instalar si no lo tienes
+# install.packages("FactoMineR")
+# install.packages("factoextra")
+
+library(FactoMineR)
+library(factoextra)
+
+# Seleccionar solo variables categóricas
+vars_mca <- empleo_mod %>%
+  select(sexo_d, estciv_ord, dominio, lengua_cat, ultani_cat)
+
+# Realizar MCA
+mca_res <- MCA(vars_mca, graph = FALSE)
+
+# Resumen de resultados
+summary(mca_res)
+
+
+```
+```{r}
+library(dplyr)
+library(ade4)
+
+# Seleccionar solo variables categóricas relevantes para el MCA
+vars_mca <- empleo_mod %>%
+  select(sexo_d, estciv_ord, dominio, lengua_cat, ultani_cat)
+
+# Asegurar que todas estén como factor
+vars_mca <- vars_mca %>% mutate(across(everything(), as.factor))
+
+# Ejecutar MCA (Análisis de Correspondencias Múltiples)
+mca_res <- dudi.acm(vars_mca, scannf = FALSE, nf = 5)
+
+# Resumen del MCA
+mca_res
+
+```
+
+
+gráfico de individuos y de categorías
+
+```{r}
+# Gráfico de individuos
+plot(mca_res$li, main = "MCA - Individuos")
+```
+
+```{r}
+s.label(mca_res$li,
+        cpoint = 0.5,
+        clabel = 0,
+        sub = "MCA - Individuos",
+        csub = 2)
+
+```
+
+
+
+```{r}
+# Gráfico de categorías
+plot(mca_res$co, main = "MCA - Categorías")
+```
+```{r}
+# Gráfico de categorías
+
+p_mca <- s.label(mca_res$co, clabel = 1, sub = "MCA - Categorías")
+
+
+
+
+```
+
+
+```{r}
+library(ggplotify)
+
+# Convertir s.label() en objeto ggplot
+p_mca <- as.ggplot(function() s.label(mca_res$co, clabel = 1, sub = "MCA - Categorías"))
+
+# Exportar imagen
+ggsave(
+  filename = "mca_categorias.png",
+  plot = p_mca,
+  path = "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes",
+  width = 10,
+  height = 7,
+  dpi = 300
+)
+```
+
+
+
+CLUSTERIZACION 
+
+Clustering usando resultados del MCA
+```{r}
+# 1. Tomar coordenadas de individuos del MCA
+coords <- mca_res$li[, 1:5]   # usa 5 dimensiones, o las que decidas
+
+# 2. Escalar (opcional pero recomendable)
+coords_scaled <- scale(coords)
+
+# 3. Clustering jerárquico
+dist_mca <- dist(coords_scaled)
+hc <- hclust(dist_mca, method = "ward.D2")
+
+
+```
+
+
+```{r}
+# 4. Graficar dendrograma
+plot(hc, main = "Dendrograma - MCA + Ward")
+
+
+```
+
+
+```{r}
+# 5. Elegir número de clusters (ej. 3)
+clusters <- cutree(hc, k = 3)
+
+# 6. Añadir cluster al dataframe original
+empleo_mv$cluster <- factor(clusters)
+```
+
+
+```{r}
+library(tidyr)
+
+vars_mca <- empleo_mv %>%
+  select(sexo_d, estciv_ord, dominio, lengua_cat, ultani_cat) %>%
+  drop_na()
+
+```
+
+
+```{r}
+# Seleccionar variables del MCA
+vars_mca <- empleo_mv %>%
+  select(sexo_d, estciv_ord, dominio, lengua_cat, ultani_cat) %>%
+  mutate(across(everything(), as.factor))
+
+```
+
+
+```{r}
+empleo_mv_clean <- empleo_mv %>% 
+  drop_na(sexo_d, estciv_ord, dominio, lengua_cat, ultani_cat)
+
+```
+
+
+```{r}
+mca_res <- dudi.acm(vars_mca, scannf = FALSE, nf = 5)
+
+```
+
+
+```{r}
+mca_res
+```
+
+
+
+```{r}
+coords <- mca_res$li[, 1:5]
+dist_mca <- dist(scale(coords))
+hc <- hclust(dist_mca, method = "ward.D2")
+clusters <- cutree(hc, k = 3)
+
+empleo_mv_clean$cluster <- factor(clusters)
+
+```
+
+```{r}
+table(empleo_mv_clean$cluster)
+
+```
+
+```{r}
+library(ggplot2)
+df_plot <- data.frame(coords, cluster = factor(clusters))
+
+p_clusters <- ggplot(df_plot, aes(Axis1, Axis2, color = cluster)) +
+  geom_point(alpha = 0.6) +
+  theme_minimal()
+
+p_clusters 
+
+# Exportar imagen
+ggsave(
+  filename = "mca_clusters.png",
+  plot = p_clusters,
+  path = "C:/Users/Michael Encalada/Documents/GitHub/Trabajos/proyecto_estadistica_angieynicole/Imagenes",
+  width = 10,
+  height = 7,
+  dpi = 300
+)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
