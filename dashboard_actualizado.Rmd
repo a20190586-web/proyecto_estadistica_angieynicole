@@ -1,5 +1,5 @@
 ---
-title: "dashboard"
+title: "Conectividad digital y desigualdad laboral: determinantes del empleo formal juvenil en el Perú (2020-2023)"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -24,29 +24,31 @@ img_path <- "/Users/nicolyulissataipearoni/Documents/GitHub/proyecto_estadistica
 
 # Proyecto Final
 
-Nicol Yulissa Taipe Aroni (20222682)
-Angie Vargas (20190586)
+*Nicol Yulissa Taipe Aroni (20222682)*
+*Angie Vargas (20190586)*
 
-**Tema**
+### **Tema**
 
 Desigualdad digital y empleabilidad en jóvenes peruanos (18–29 años), 2020–2023 (pandemia y pospandemia)
 
-**Pregunta** : ¿De qué manera el acceso a Internet incide en la probabilidad de acceder a un empleo formal entre los jóvenes peruanos (18–29 años) durante 2020–2023?
+### **Pregunta**
 
-**Hipótesis** : Los jóvenes con acceso a Internet en el hogar tienen mayor probabilidad de acceder a un empleo formal, controlando por educación, género y zona geográfica.
+¿De qué manera el acceso a Internet incide en la probabilidad de acceder a un empleo formal entre los jóvenes peruanos (18–29 años) durante 2020–2023?
+
+### **Hipótesis**
+
+Los jóvenes con acceso a Internet en el hogar tienen mayor probabilidad de acceder a un empleo formal, controlando por educación, género y zona geográfica.
+
+### **Justificación**
+
+La brecha digital es hoy un factor clave de desigualdad y afecta directamente las oportunidades de acceso al empleo formal juvenil. La falta de conectividad limita el desarrollo de habilidades demandadas en el mercado laboral (Becker, 1975) y reproduce desigualdades previas en educación y territorio (Van Dijk, 2005).En el Perú, las diferencias entre zonas urbanas y rurales siguen siendo marcadas, restringiendo especialmente a jóvenes de 18 a 29 años (INEI, 2023a, 2023b). Estas brechas se combinan con desigualdades educativas, lingüísticas y de género, reduciendo sus posibilidades de inserción formal.Analizar este fenómeno entre 2020 y 2023 permite orientar políticas que amplíen la conectividad y fortalezcan competencias digitales, reconociendo que la brecha digital es, en esencia, una manifestación de desigualdad social que condiciona el futuro laboral juvenil.
 
 
 ------------------------------------------------------------------------
 
 # Variable Dependiente
 
-## Empleo formal
-
-Para la construcción de la variable dependiente “empleo formal”, se consideraron los individuos que cumplen simultáneamente dos criterios: ser asalariados y contar con contrato escrito.Luego todo se hace sobre los que estan empleados.
-
-
-El 25.4 % tienen empleo formal, 51.8 % informal y 22.8 % carecen de información suficiente. Esto evidencia que más de la mitad de los trabajadores jóvenes activos se encuentran en condiciones laborales informales, un hallazgo consistente con los desafíos estructurales del mercado laboral peruano.
-
+### **Condición de empleo formal**: Para la construcción de la variable dependiente “empleo formal”, se consideraron los individuos que cumplen simultáneamente dos criterios: ser asalariados y contar con contrato escrito.Luego todo se hace sobre los que estan empleados. El 25.4 % tienen empleo formal, 51.8 % informal y 22.8 % carecen de información suficiente. Esto evidencia que más de la mitad de los trabajadores jóvenes activos se encuentran en condiciones laborales informales, un hallazgo consistente con los desafíos estructurales del mercado laboral peruano.
 
 
 ```{r}
@@ -54,6 +56,9 @@ knitr::include_graphics(file.path(img_path, "grafico_formalidad_ocupados.png"))
 
 ```
 
+------------------------------------------------------------------------
+
+# Variable Independiente
 
 ## Acceso a internet
 
@@ -64,6 +69,14 @@ Entre los trabajadores (empleo), se observa que aproximadamente 79 % tiene acc
 knitr::include_graphics(file.path(img_path, "grafico_internet_ocupados.png"))
 
 ```
+
+### **Nivel educativo (ordinal)**: Primaria / secundaria / superior. A mayor educación, mayor probabilidad de empleo formal y mejor uso de tecnologías.
+
+### **Género (binaria)**: 1 = mujer, 0 = hombre. Captura brechas laborales y digitales que afectan la inserción formal juvenil.
+
+### **Edad (numérica continua)**: Refleja diferencias dentro del grupo 18–29: la formalidad aumenta con la experiencia y la transición a empleos más estables.
+
+### **Área de residencia (binaria)**: 1 = urbano, 0 = rural. Mide desigualdades territoriales en conectividad y acceso a empleos formales.
 
 
 ------------------------------------------------------------------------
@@ -145,3 +158,28 @@ knitr::include_graphics(file.path(img_path, "mca_clusters.png"))
 
 
 ------------------------------------------------------------------------
+
+# Conclusiones
+
+El acceso a Internet aumenta significativamente la probabilidad de empleo formal juvenil.
+Edad y residencia en Lima Metropolitana son los predictores más fuertes de formalización.
+Persisten brechas de género y territoriales que limitan las oportunidades de mujeres y jóvenes rurales.
+El ACM y los clústeres muestran tres perfiles, con clara ventaja del perfil urbano-educado y exclusión del perfil rural-indígena.
+
+### **Aportes del estudio**
+
+Ofrece evidencia reciente sobre cómo la brecha digital influye en el empleo juvenil.
+Identifica perfiles socioculturales que explican desigualdades en conectividad y formalidad.
+Aporta insumos para políticas integrales que combinen conectividad, educación y descentralización laboral.
+
+
+------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
